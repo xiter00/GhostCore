@@ -94,6 +94,7 @@ TaskHandle_t TaskWiFi;
 void app_main(void) {
     ESP_LOGI("GhostCore", "System Booting...");
     
-    xTaskCreatePinnedToCore(task_display, "DisplayTask", 8192, NULL, 1, NULL, 1);
-    xTaskCreatePinnedToCore(loopWiFi, "TaskWiFi", 16384, NULL, 1, &TaskWiFi, 0);
+    xTaskCreate(task_display, "DisplayTask", 8192, NULL, 1, NULL);
+xTaskCreate(loopWiFi, "TaskWiFi", 16384, NULL, 1, &TaskWiFi);
+
 }
