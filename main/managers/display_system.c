@@ -44,7 +44,7 @@ void init_joystick() {
 
 void task_display(void *pvParameters) {
 init_joystick();
-if (ssd1306_init(0, 9, 8)) {
+if (ssd1306_init(0, 4, 3)) {
     vTaskDelay(pdMS_TO_TICKS(100)); 
     ssd1306_select_font(0, 0);
     ssd1306_clear(0);
