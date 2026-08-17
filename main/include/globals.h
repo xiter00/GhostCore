@@ -3,11 +3,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "driver/gpio.h"
 
 // --- SETTING PIN JOYSTICK ---
-#define PIN_LEFT  40
-#define PIN_RIGHT 39
-#define PIN_OK    38
+#define PIN_LEFT  5
+#define PIN_RIGHT 6
+#define PIN_OK    7
 #define WHITE 1
 #define BLACK 0
 
