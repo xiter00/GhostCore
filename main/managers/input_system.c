@@ -85,7 +85,7 @@ void handleJoystick() {
         if (!inSubMenu) {
           if (btn == BTN_RIGHT) {
     // Cuma satu arah (RIGHT), muter terus 0->1->2->3->0->...
-    carouselCurrentIdx = (carouselCurrentIdx + 1) % 4;
+    carouselCurrentIdx = (carouselCurrentIdx + 1) % 3;
     carouselDirection = 1;
     carouselAnimating = true;
     carouselAnimStart = input_millis();
@@ -106,9 +106,8 @@ void handleJoystick() {
                 int limitMenu = 0; 
                 if(currentMenu == 0)      limitMenu = 4; 
                 else if(currentMenu == 1) limitMenu = 3;
-                else if(currentMenu == 2) limitMenu = 4;
-                else if(currentMenu == 3) limitMenu = 4; // 3 kelihatan + 1 hidden (AI Audio)
-                else limitMenu = 4;
+                else if(currentMenu == 2) limitMenu = 3; // Settings: Brightness, About, Reboot
+                else limitMenu = 3;
 
 
                 if (currentSub < (limitMenu - 1)) { 
@@ -132,16 +131,6 @@ void handleJoystick() {
                     scannerState = 2;     
                     cursorInScanner = 0;  
                     scrollPosScanner = 0; 
-                } else if (currentMenu == 3 && currentSub == 0) { 
-                    appMode = 3; 
-                } else if (currentMenu == 2 && currentSub == 0) { 
-                    appMode = MODE_IR_SNIFFER; 
-                    currentIRState = IR_STATE_CONFIRM; // Reset tiap masuk menu
-                } else if (currentMenu == 2 && currentSub == 3) { 
-                    loadSavedRemotes(); // Baca memori SD
-                    currentIRSavedState = IR_SAVED_STATE_LIST; 
-                    savedRemoteIndex = 0; 
-                    appMode = MODE_SAVED_REMOTE; 
                 } else if (currentMenu == 0 && currentSub == 2) {
                     aktifModeSpam = 1; 
                     appMode = 4;       
@@ -150,15 +139,12 @@ void handleJoystick() {
                     aktifModeSpam = 2; 
                     appMode = 4;
                     spamState = 0;
-                } else if (currentMenu == 3 && currentSub == 1) {
+                } else if (currentMenu == 2 && currentSub == 0) { 
+                    appMode = 3; // Brightness
+                } else if (currentMenu == 2 && currentSub == 1) {
                     appMode = 14; // About RootX
-                } else if (currentMenu == 3 && currentSub == 2) {
+                } else if (currentMenu == 2 && currentSub == 2) {
                     appMode = 15; // Reboot
-                } else if (currentMenu == 3 && currentSub == 3) { // <--- BLOK MENU AI AUDIO (hidden toggle)
-                    aiAudioEnabled = !aiAudioEnabled; 
-                    
-                    // Panggil fungsi buat matiin/hidupin hardware!
-                    set_ai_audio_hardware(aiAudioEnabled); 
                 }
             }
         }

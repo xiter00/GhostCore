@@ -7,8 +7,12 @@
 #include "photo_data.h"
 #include "ssd1306.h" 
 
+#ifndef WHITE
 #define WHITE 1
+#endif
+#ifndef BLACK
 #define BLACK 0
+#endif
 
 // ========================================================
 // Pembaca Bitmap gaya Adafruit buat library Baoshi

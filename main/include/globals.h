@@ -16,9 +16,6 @@
 #define BTN_RIGHT 2
 #define BTN_OK    3
 
-#define MODE_IR_SNIFFER 9
-#define MODE_SAVED_REMOTE 10
-
 // --- STRUKTUR WIFI (String diganti char array) ---
 typedef struct {
   int id;
@@ -36,8 +33,6 @@ typedef struct {
     int rssi;
     int paket_count;
 } StationInfo;
-
-
 
 
 
@@ -105,5 +100,18 @@ extern bool isDeauthing;
 extern bool isDeauthSta;     // Tambahan
 extern bool sedang_scan;
 extern int appMode;
+
+// --- MISSING EXTERN DECLARATIONS ---
+extern int starX[5];
+extern int starY[5];
+
+// Carousel animation (used in display + input)
+extern int carouselCurrentIdx;
+extern int carouselDirection;
+extern bool carouselAnimating;
+extern uint32_t carouselAnimStart;
+
+// --- FUNCTION PROTOTYPES ---
+void start_dns_server(void);
 
 #endif

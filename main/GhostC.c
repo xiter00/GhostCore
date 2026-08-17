@@ -47,8 +47,6 @@ bool triggerConnect = false;
 bool triggerDisconnect = false;
 
 
-int batteryPercent = 0;
-
 int deauthProgress = 0;
 bool adaTargetSta = false;
 bool isDeauthSta = false;
@@ -87,6 +85,14 @@ bool sedang_scan = false;
 int appMode = 0;
 
 TaskHandle_t TaskWiFi;
+
+// --- VARIABEL YANG SEBELUMNYA HILANG ---
+int carouselCurrentIdx = 0;
+int carouselDirection = 0;
+bool carouselAnimating = false;
+uint32_t carouselAnimStart = 0;
+int starX[5] = {0};
+int starY[5] = {0};
 
 // ==========================================
 // APP MAIN LU

@@ -12,4 +12,3 @@ idf_component_register(SRCS "GhostC.c"
 
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,-zmuldefs")
-spiffs_create_partition_image(spiffs fonts FLASH_IN_PROJECT)

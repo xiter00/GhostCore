@@ -29,8 +29,6 @@ void tampilkanStationScanner(void);
 void tampilkanTrackScreen(void);
 void tampilkandeauthsta(void);
 void tampilkanEvilTwinScreen(void);
-void tampilkanMenuIR(void);
-void tampilkanMenuSavedIR(void);
 
 bool introDone = false;
 
@@ -88,11 +86,7 @@ handleJoystick();
 tampilkandeauthsta();
 } else if (appMode == 8) {
 tampilkanEvilTwinScreen();
-} else if (appMode == MODE_IR_SNIFFER) {
-            tampilkanMenuIR();
-        } else if (appMode == MODE_SAVED_REMOTE) {
-            tampilkanMenuSavedIR();
-        } else if (appMode == 14) {
+} else if (appMode == 14) {
         renderAboutScreen(); 
         } else if (appMode == 15) {
         renderRebootScreen();
@@ -215,13 +209,6 @@ iconSmall_apple,
 iconSmall_android
 };
 
-const unsigned char* iconListIR[]   = {
-iconSmall_ir,
-iconSmall_ac,
-iconSmall_lock,
-iconSmall_saved 
-};
-
 const unsigned char* iconListSet[]  = {
 iconSmall_bright,
 iconSmall_info,
@@ -242,13 +229,6 @@ const char* subMenuBLE[]  = {
 "Spam Android"
  };
  
-const char* subMenuIR[]   = {
-"Read Signal",
-"AC Remote",
-"Brute Force",
-"Saved Remotes"
- };
-
 const char* subMenuSet[]  = {
 "Brightness",
 "About RootX",
@@ -268,26 +248,8 @@ void tampilkanMenuLogo() {
     drawStarfield();
     drawWave();
     
-    read_battery_percentage(); // Baca tiap kali refresh layar
-    char batBuf[10];
-    snprintf(batBuf, sizeof(batBuf), "%d%%", batteryPercent);
-    
-    // Tampilkan Persentase di pojok kanan (X=100, Y=0)
-    ssd1306_draw_string_adafruit(0, 95, 0, batBuf, WHITE, BLACK);
-
-    // --- DRAW ICON BATERAI (10x10) ---
-    // Kotak luar baterai
-    ssd1306_draw_rectangle(0, 116, 0, 10, 6, WHITE); 
-    ssd1306_draw_pixel(0, 126, 2, WHITE); // Kepala baterai
-    
-    // Isi baterai berdasarkan persen
-    int barWidth = batteryPercent / 12; // Skala 100% ke 8 pixel
-    if (barWidth > 8) barWidth = 8;
-    ssd1306_fill_rectangle(0, 117, 1, barWidth, 4, WHITE);
-    
     if(currentMenu == 0)      ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: WIFI", WHITE, BLACK);
     else if(currentMenu == 1) ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: BLE", WHITE, BLACK);
-    else if(currentMenu == 2) ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: IR", WHITE, BLACK);
     else                      ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: SETS", WHITE, BLACK);
     
     ssd1306_draw_hline(0, 0, 9, 128, WHITE);
@@ -295,7 +257,6 @@ void tampilkanMenuLogo() {
     const unsigned char* bigIcon;
     if(currentMenu == 0)      bigIcon = logo_wifi_32; 
     else if(currentMenu == 1) bigIcon = logo_ble_32;
-    else if(currentMenu == 2) bigIcon = logo_ir_32;
     else                      bigIcon = logo_settings_32;
     
 
@@ -318,8 +279,7 @@ void tampilkanMenuUtama() {
 
     if(currentMenu == 0)      { ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: WIFI", WHITE, BLACK); totalSub = 4; }
     else if(currentMenu == 1) { ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: BLE ", WHITE, BLACK); totalSub = 3; }
-    else if(currentMenu == 2) { ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: IR", WHITE, BLACK);   totalSub = 4; }
-    else                       { ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: SETS", WHITE, BLACK); totalSub = 3; }
+    else                      { ssd1306_draw_string_adafruit(0, 0, 0, "#> RootX: SETS", WHITE, BLACK); totalSub = 3; }
     
     ssd1306_draw_hline(0, 0, 9, 128, WHITE);
 
@@ -360,7 +320,6 @@ void tampilkanMenuUtama() {
         const unsigned char* iconSmall;
         if(currentMenu == 0)      iconSmall = iconListWiFi[itemIndex]; 
         else if(currentMenu == 1) iconSmall = iconListBLE[itemIndex];
-        else if(currentMenu == 2) iconSmall = iconListIR[itemIndex];
         else                      iconSmall = iconListSet[itemIndex];
 
         // Gambar Icon (Kalo diselect dia ada iconBounce-nya, kalo ngga ya + 0)
@@ -370,7 +329,6 @@ void tampilkanMenuUtama() {
         const char* textToPrint = "";
         if(currentMenu == 0)      textToPrint = subMenuWiFi[itemIndex];
         else if(currentMenu == 1) textToPrint = subMenuBLE[itemIndex];
-        else if(currentMenu == 2) textToPrint = subMenuIR[itemIndex];
         else                      textToPrint = subMenuSet[itemIndex];
 
         // Gambar Teks (Kalo diselect, text-nya ikutan goyang dikit biar asik)
@@ -909,137 +867,6 @@ void tampilkanEvilTwinScreen() {
     ssd1306_refresh(0, true);
 }
 
-
-ir_saved_state_t currentIRSavedState = IR_SAVED_STATE_LIST;
-SavedRemote_t listSavedRemotes[20];
-int totalSavedRemotes = 0;
-int savedRemoteIndex = 0;
-int actionMenuIndex = 0; // 0 = Transmit, 1 = Hapus
-
-// Panggil fungsi ini pas PERTAMA KALI masuk menu Saved Remote
-// Fungsi Parse Data Mentah dari SD Card
-void loadSavedRemotes() {
-    totalSavedRemotes = 0;
-    FILE* f = fopen("/sdcard/ir_log.txt", "r");
-    if (!f) return; 
-
-    char line[1500]; // Buffer gede buat baca array
-    while (fgets(line, sizeof(line), f) && totalSavedRemotes < 20) {
-        char* token = strtok(line, "|");
-        if (!token) continue;
-        strcpy(listSavedRemotes[totalSavedRemotes].nama, token);
-        
-        token = strtok(NULL, "|");
-        if (!token) continue;
-        listSavedRemotes[totalSavedRemotes].num_pulses = atoi(token);
-        
-        token = strtok(NULL, "|");
-        char* p_token = strtok(token, ",");
-        int idx = 0;
-        while (p_token != NULL && idx < 200) {
-            listSavedRemotes[totalSavedRemotes].pulses[idx] = atoi(p_token);
-            p_token = strtok(NULL, ",");
-            idx++;
-        }
-        totalSavedRemotes++;
-    }
-    fclose(f);
-}
-
-// --- Potongan buat nampilin layar Hasil ---
-
-
-void tampilkanMenuSavedIR() {
-    ssd1306_clear(0); // Bersihin layar (ID 0)
-
-    if (currentIRSavedState == IR_SAVED_STATE_LIST) {
-        // --- HEADER (BLOK PUTIH) ---
-        // Format library lu: (ID, X, Y, Teks, Warna Teks, Warna Background)
-        ssd1306_fill_rectangle(0, 0, 0, 128, 10, WHITE);
-        ssd1306_draw_string_adafruit(0, 2, 1, "SAVED REMOTE", BLACK, WHITE);
-
-        if (totalSavedRemotes == 0) {
-            ssd1306_draw_string_adafruit(0, 10, 25, "Data Kosong!", WHITE, BLACK);
-        } else {
-            // Tampilkan max 3 item biar rapi (Paging logic)
-            int startIdx = (savedRemoteIndex / 3) * 3;
-            for (int i = 0; i < 3; i++) {
-                int curr = startIdx + i;
-                if (curr >= totalSavedRemotes) break;
-
-                char buf[32];
-                if (curr == savedRemoteIndex) {
-                    snprintf(buf, sizeof(buf), "> %s", listSavedRemotes[curr].nama);
-                } else {
-                    snprintf(buf, sizeof(buf), "  %s", listSavedRemotes[curr].nama);
-                }
-                ssd1306_draw_string_adafruit(0, 0, 16 + (i * 12), buf, WHITE, BLACK);
-            }
-        }
-
-        // --- FOOTER (BLOK PUTIH) ---
-        ssd1306_fill_rectangle(0, 0, 54, 128, 10, WHITE);
-        ssd1306_draw_string_adafruit(0, 2, 55, "< NO", BLACK, WHITE);
-        ssd1306_draw_string_adafruit(0, 95, 55, "OK >", BLACK, WHITE);
-    } 
-    else if (currentIRSavedState == IR_SAVED_STATE_ACTION) {
-        char buf[32];
-        
-        snprintf(buf, sizeof(buf), " ACTION: %s ", listSavedRemotes[savedRemoteIndex].nama);
-        // Header
-        
-        ssd1306_fill_rectangle(0, 0, 0, 128, 10, WHITE);
-        ssd1306_draw_string_adafruit(0, 2, 1, buf, BLACK, WHITE);
-
-        // Menu Transmit / Hapus
-        if (actionMenuIndex == 0) {
-            ssd1306_draw_string_adafruit(0, 15, 20, "> 1. TRANSMIT", WHITE, BLACK);
-            ssd1306_draw_string_adafruit(0, 15, 35, "  2. HAPUS", WHITE, BLACK);
-        } else {
-            ssd1306_draw_string_adafruit(0, 15, 20, "  1. TRANSMIT", WHITE, BLACK);
-            ssd1306_draw_string_adafruit(0, 15, 35, "> 2. HAPUS", WHITE, BLACK);
-        }
-        ssd1306_fill_rectangle(0, 0, 54, 128, 10, WHITE);
-        ssd1306_draw_string_adafruit(0, 2, 55, "< NO", BLACK, WHITE);
-    } 
-    else if (currentIRSavedState == IR_SAVED_STATE_SENDING) {
-        // Layar Polos, Tulisan di Tengah!
-        ssd1306_draw_string_adafruit(0, 25, 25, "IR SEND!", WHITE, BLACK);
-    }
-
-    // Refresh layar ID 0, dan force update (true)
-    ssd1306_refresh(0, true); 
-}
-
-void tampilkanMenuIR() {
-    ssd1306_clear(0);
-    char buf[32];
-
-    if (currentIRState == IR_STATE_CONFIRM) {
-        ssd1306_fill_rectangle(0, 0, 0, 128, 10, WHITE);
-        ssd1306_draw_string_adafruit(0, 2, 1, "SNIFF IR SIGNAL", BLACK, WHITE);
-        ssd1306_draw_string_adafruit(0, 10, 25, "Start Sniff??", WHITE, BLACK);
-        
-        ssd1306_fill_rectangle(0, 0, 54, 128, 10, WHITE);
-        ssd1306_draw_string_adafruit(0, 2, 55, "< NO", BLACK, WHITE);
-        ssd1306_draw_string_adafruit(0, 95, 55, "OK >", BLACK, WHITE);
-    
-    } 
-    else if (currentIRState == IR_STATE_WAITING) {
-        ssd1306_draw_string_adafruit(0, 5, 20, "Menunggu", WHITE, BLACK);
-        ssd1306_draw_string_adafruit(0, 5, 40, "sinyal masuk...", WHITE, BLACK);
-    } 
-    else if (currentIRState == IR_STATE_RESULT) {
-        ssd1306_draw_string_adafruit(0, 0, 0, "== IR RESULT ==", WHITE, BLACK);
-        ssd1306_draw_string_adafruit(0, 0, 16, "Type: RAW CLONER", WHITE, BLACK);
-        
-        snprintf(buf, sizeof(buf), "Pulses: %d", last_ir_data.num_pulses);
-        ssd1306_draw_string_adafruit(0, 0, 30, buf, WHITE, BLACK);
-        
-        ssd1306_draw_string_adafruit(0, 0, 56, "> SD Card Saved <", WHITE, BLACK);
-    }
-    ssd1306_refresh(0, true);
-}
 
 void renderAboutScreen() {
     ssd1306_clear(0);

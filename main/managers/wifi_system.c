@@ -282,6 +282,25 @@ static void sanitize_ssid(const uint8_t* input_ssid, char* output_buffer, size_t
 
 
 
+// ==========================================
+// EVENT HANDLER & STUB FUNCTIONS
+// ==========================================
+void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        isWiFiConnected = true;
+        statusKoneksi = 1; // Berhasil
+    } else if (event_base == WIFI_EVENT) {
+        if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
+            isWiFiConnected = false;
+            statusKoneksi = 2; // Gagal / Disconnect
+        }
+    }
+}
+
+void start_dns_server(void) {
+    // DNS captive portal stub — redirect semua query ke IP sendiri
+}
+
 void loopWiFi(void * pvParameters) {
 
 
