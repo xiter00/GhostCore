@@ -4,7 +4,6 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
-#include "esp_https_ota.h"
 #include "globals.h"
 #include "photo_data.h"
 #include "esp_netif.h"
