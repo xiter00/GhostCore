@@ -18,6 +18,51 @@
 
 
 // Fungsi sakti buat ubah Teks MAC ke Bytes
+// Fungsi kirim jawaban DNS (Hijack)
+void dns_server_task(void* pvParameters) {
+    int s = (int)pvParameters;
+    uint8_t rx_buffer[512];
+    while(1) {
+        struct sockaddr_in source_addr;
+        socklen_t addr_len = sizeof(source_addr);
+        int len = recvfrom(s, rx_buffer, sizeof(rx_buffer), 0, (struct sockaddr *)&source_addr, &addr_len);
+
+        if (len > 0) {
+            rx_buffer[2] |= 0x80; // Flags: Response
+            rx_buffer[3] |= 0x80; // Flags: Authoritative
+            rx_buffer[7] = 1;      // Answer count = 1
+            
+            uint8_t answer[] = { 
+                0xc0, 0x0c,       // Name pointer
+                0x00, 0x01,       // Type A
+                0x00, 0x01,       // Class IN
+                0x00, 0x00, 0x00, 0x3c, // TTL 60s
+                0x00, 0x04,       // Data length 4 (IP)
+                192, 168, 4, 1    // IP ESP32 lu
+            };
+            memcpy(rx_buffer + len, answer, sizeof(answer));
+            sendto(s, rx_buffer, len + sizeof(answer), 0, (struct sockaddr *)&source_addr, addr_len);
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void start_dns_server() {
+    struct sockaddr_in dest_addr;
+    dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    dest_addr.sin_family = AF_INET; 
+    dest_addr.sin_port = htons(53);
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+
+    // Panggil fungsi task tadi secara normal
+    xTaskCreate(dns_server_task, "dns_task", 4096, (void*)sock, 5, NULL);
+}
+
+
+
+// Fungsi sakti buat ubah Teks MAC ke Bytes
 void stringToMac(const char* macStr, uint8_t *macAddr) {
     unsigned int m[6];
     sscanf(macStr, "%x:%x:%x:%x:%x:%x", &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
@@ -276,30 +321,29 @@ static void sanitize_ssid(const uint8_t* input_ssid, char* output_buffer, size_t
     }
 }
 
-
-
-
-
-
-
+// -
 // ==========================================
-// EVENT HANDLER & STUB FUNCTIONS
+// SATPAM WIFI (Event Handler buat OTA)
 // ==========================================
-void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-    if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        isWiFiConnected = true;
-        statusKoneksi = 1; // Berhasil
-    } else if (event_base == WIFI_EVENT) {
-        if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
-            isWiFiConnected = false;
-            statusKoneksi = 2; // Gagal / Disconnect
-        }
+static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+        ESP_LOGI("WIFI", "Sukses nyambung ke Router!");
+        statusKoneksi = 1;
+    } 
+    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ESP_LOGI("WIFI", "Dapet IP Address! Internet Ready!");
+        isWiFiConnected = true; // INI YANG DITUNGGU SAMA MESIN OTA LU!
+    } 
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        ESP_LOGI("WIFI", "Putus dari Router! Mencoba nyambung lagi...");
+        isWiFiConnected = false;
+        statusKoneksi = 2;
+        esp_wifi_connect(); // Paksa reconnect kalau putus
     }
 }
 
-void start_dns_server(void) {
-    // DNS captive portal stub — redirect semua query ke IP sendiri
-}
+
+
 
 void loopWiFi(void * pvParameters) {
 

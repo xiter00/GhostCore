@@ -72,6 +72,44 @@ void handleJoystick() {
         lastPress = input_millis();
         return;
     }
+    
+    if (apppMode == 3) {
+     if (btn == BTN_LEFT) { 
+            appMode = 1;
+            currentMenu = 2;
+            currentSub = 0;
+        }
+        lastPress = input_millis();
+        return;
+    }
+    
+    if (apppMode == 14) {
+     if (btn == BTN_LEFT) { 
+            appMode = 1;
+            currentMenu = 2;
+            currentSub = 1;
+        }
+        lastPress = input_millis();
+        return;
+
+    }
+    
+    if (apppMode == 15) {
+     if (btn == BTN_LEFT) { 
+            appMode = 1;
+            currentMenu = 2;
+            currentSub = 1;
+        
+        lastPress = input_millis();
+        return;
+        }
+        
+        else if (btn == BTN_OK) {
+            esp_restart().
+        lastPress = input_millis();
+        return;
+        }
+    }
 
 
 
@@ -84,9 +122,18 @@ void handleJoystick() {
     if (appMode == 0) {
         if (!inSubMenu) {
           if (btn == BTN_RIGHT) {
-    // Cuma satu arah (RIGHT), muter terus 0->1->2->3->0->...
     carouselCurrentIdx = (carouselCurrentIdx + 1) % 3;
+    currentMenu = (currentMenu + 1) % 3;
     carouselDirection = 1;
+    carouselAnimating = true;
+    carouselAnimStart = input_millis();
+    lastPress = input_millis();
+    return;
+}
+else if (btn == BTN_LEFT) {
+    carouselCurrentIdx = (carouselCurrentIdx - 1 + 3) % 3;
+    currentMenu = (currentMenu -1 + 3) % 3;
+    carouselDirection = -1;
     carouselAnimating = true;
     carouselAnimStart = input_millis();
     lastPress = input_millis();
