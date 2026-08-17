@@ -94,7 +94,7 @@ void handleJoystick() {
 
     }
     
-    if (apppMode == 15) {
+    if (appMode == 15) {
      if (btn == BTN_LEFT) { 
             appMode = 1;
             currentMenu = 2;
@@ -105,7 +105,7 @@ void handleJoystick() {
         }
         
         else if (btn == BTN_OK) {
-            esp_restart().
+            esp_restart();
         lastPress = input_millis();
         return;
         }
