@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include "driver/gpio.h"
 // --- PINOUT (Joystick fisik opsional) ---
 #define PIN_LEFT  40
 #define PIN_RIGHT 39
